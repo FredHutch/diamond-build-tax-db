@@ -58,13 +58,18 @@ workflow {
         }
     )
 
+    // Annotate the gene names with the organism Tax ID
+    format_gene_taxid_table(
+        prodigal.out
+    )
+
 }
 
 // Unpack the NCBI taxonomy and return the nodes.dmp
 process get_NCBI_taxonomy {
     container "${container__ubuntu}"
     label "io_limited"
-    errorStrategy "retry"
+    // errorStrategy "retry"
     
     input:
     file ncbi_taxdump
@@ -83,7 +88,7 @@ tar xzvf ${ncbi_taxdump}
 process prodigal {
     container "${container__prodigal}"
     label 'io_limited'
-    errorStrategy "retry"
+    // errorStrategy "retry"
  
     input:
         tuple file(fasta), val(tax_id)
@@ -105,6 +110,55 @@ prodigal \
     -a OUTPUT.faa \
     -i INPUT.fasta
 
-gzip OUTPUT.faa
+cat OUTPUT.faa | sed 's/ .*//' | gzip -c > OUTPUT.faa.gz
+"""
+}
+
+// Make a TSV with the Tax ID for each gene in each genome
+process format_gene_taxid_table {
+    container "${container__ubuntu}"
+    label "io_limited"
+    // errorStrategy "retry"
+    
+    input:
+    tuple file(faa_gz), val(tax_id)
+
+    output:
+    file "genome_prot2taxid.tsv.gz"
+
+"""#!/bin/bash
+
+gunzip -c "${faa_gz}" | \
+    grep '>' | \
+    tr -d '>' | \
+    while read gene_id; do
+        echo \$gene_id \$gene_id ${tax_id} \$gene_id
+    done | tr ' ' '\\t' | gzip -c > genome_prot2taxid.tsv.gz
+"""
+}
+
+// Join together all of those TSVs
+process join_gene_taxid_tables {
+    container "${container__ubuntu}"
+    label "io_limited"
+    // errorStrategy "retry"
+    
+    input:
+    file "genome_prot2taxid.*.tsv.gz"
+
+    output:
+    file "genome_prot2taxid.tsv.gz"
+
+"""#!/bin/bash
+
+# Write the header
+echo "accession	accession.version	taxid	gi" > genome_prot2taxid.tsv
+
+# Add the rows for each genome
+for fp in genome_prot2taxid.*.tsv.gz; do
+    gunzip -c \$fp >> genome_prot2taxid.tsv
+done
+
+gzip genome_prot2taxid.tsv
 """
 }
