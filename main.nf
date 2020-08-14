@@ -226,7 +226,7 @@ process diamondDB {
 set -e
 
 # Decompress the FASTA
-gunzip ${fasta}
+gunzip database.faa.gz
 
 diamond \
     makedb \
