@@ -216,22 +216,25 @@ process diamondDB {
     publishDir "${params.output_folder}", mode: "copy"
     
     input:
-    tuple file(fasta), file(taxonmap), file(taxonnodes)
+    tuple file("database.faa.gz"), file(taxonmap), file(taxonnodes)
 
     output:
     file "genes.dmnd"
 
     """#!/bin/bash
 
-    set -e
+set -e
 
-    diamond \
-      makedb \
-      --in ${fasta} \
-      --db ${params.output_prefix}.dmnd \
-      --threads ${task.cpus} \
-      --taxonmap ${taxonmap} \
-      --taxonnodes ${taxonnodes}
+# Decompress the FASTA
+gunzip ${fasta}
+
+diamond \
+    makedb \
+    --in database.faa \
+    --db ${params.output_prefix}.dmnd \
+    --threads ${task.cpus} \
+    --taxonmap ${taxonmap} \
+    --taxonnodes ${taxonnodes}
     """
 
 }
