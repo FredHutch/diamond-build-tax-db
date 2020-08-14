@@ -155,14 +155,21 @@ process rename_genes {
 """#!/bin/bash
 
 gunzip -c ${faa_gz} | while read line; do
-    if [[ \${line:0:1} == '>' ]]; then
-        echo ">\$(cat /dev/urandom | tr -dc 'A-Z' | fold -w 2 | head -n 1)_\$(cat /dev/urandom | tr -dc 'A-Z' | fold -w 4 | head -n 1)\$(cat /dev/urandom | tr -dc '0-9' | fold -w 8 | head -n 1).1"
-    else
-        echo \$line
-    fi
-done | gzip -c > TEMP
 
-mv TEMP ${faa_gz}
+    if [[ \${line:0:1} == '>' ]]; then
+
+        echo ">\$(cat /dev/urandom | tr -dc 'A-Z' | fold -w 2 | head -n 1)_\$(cat /dev/urandom | tr -dc 'A-Z' | fold -w 4 | head -n 1)\$(cat /dev/urandom | tr -dc '0-9' | fold -w 8 | head -n 1).1"
+    
+    else
+    
+        echo \$line
+    
+    fi
+
+done > TEMP
+
+gzip TEMP
+mv TEMP.gz ${faa_gz}
 
 """
 }
