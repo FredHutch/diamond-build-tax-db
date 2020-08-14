@@ -142,7 +142,7 @@ cat OUTPUT.faa | sed 's/ .*//' | gzip -c > OUTPUT.faa.gz
 
 // Rename the genes with pseudo accessions
 process rename_genes {
-    container "${container__ubuntu}"
+    container "python:3"
     label "io_limited"
     // errorStrategy "retry"
     
@@ -152,25 +152,30 @@ process rename_genes {
     output:
     tuple file("${faa_gz}"), val(tax_id)
 
-"""#!/bin/bash
+"""#!/usr/bin/env python3
 
-gunzip -c ${faa_gz} | while read line; do
+import gzip
+import random
+import string
 
-    if [[ \${line:0:1} == '>' ]]; then
+def get_random_string(letters, length):
+    return ''.join((random.choice(letters) for i in range(length)))
 
-        echo ">\$(cat /dev/urandom | tr -dc 'A-Z' | fold -w 2 | head -n 1)_\$(cat /dev/urandom | tr -dc 'A-Z' | fold -w 4 | head -n 1)\$(cat /dev/urandom | tr -dc '0-9' | fold -w 8 | head -n 1).1"
-    
-    else
-    
-        echo \$line
-    
-    fi
+def random_gi(numbers = "1234567890"):
+    return ">{}_{}{}.1\\n".format(
+        get_random_string(string.ascii_uppercase, 2),
+        get_random_string(string.ascii_uppercase, 4),
+        get_random_string(numbers, 4),
+    )
 
-done > TEMP
 
-gzip TEMP
-mv TEMP.gz ${faa_gz}
-
+with gzip.open("${faa_gz}", "rt") as handle_in:
+    with gzip.open("${faa_gz}.renamed.faa.gz", "wt") as handle_out:
+        for line in handle_in:
+            if line[0] == ">":
+                handle_out.write(random_gi())
+            else:
+                handle_out.write(line)
 """
 }
 // Make a TSV with the Tax ID for each gene in each genome
