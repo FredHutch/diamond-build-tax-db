@@ -59,16 +59,21 @@ workflow {
         }
     )
 
+    // Rename the genes with random gi names to conform to DIAMOND's expectations
+    rename_genes(
+        prodigal.out
+    )
+
     // Combine all of the amino acid sequences
     join_genes(
-        prodigal.out.map {
+        rename_genes.out.map {
             r -> r[0]
         }.toSortedList()
     )
 
     // Annotate the gene names with the organism Tax ID
     format_gene_taxid_table(
-        prodigal.out
+        rename_genes.out
     )
 
     // Join together those gene taxid TSV files
@@ -135,6 +140,32 @@ cat OUTPUT.faa | sed 's/ .*//' | gzip -c > OUTPUT.faa.gz
 """
 }
 
+// Rename the genes with pseudo accessions
+process rename_genes {
+    container "${container__ubuntu}"
+    label "io_limited"
+    // errorStrategy "retry"
+    
+    input:
+    tuple file(faa_gz), val(tax_id)
+
+    output:
+    tuple file("${faa_gz}"), val(tax_id)
+
+"""#!/bin/bash
+
+gunzip -c ${faa_gz} | while read line; do
+    if [[ \${line:0:1} == '>' ]]; then
+        echo \$(cat /dev/urandom | tr -dc 'A-Z' | fold -w 2 | head -n 1)_\$(cat /dev/urandom | tr -dc 'A-Z' | fold -w 4 | head -n 1)\$(cat /dev/urandom | tr -dc '0-9' | fold -w 8 | head -n 1).1
+    else
+        echo \$line
+    fi
+done | gzip -c > TEMP
+
+mv TEMP ${faa_gz}
+
+"""
+}
 // Make a TSV with the Tax ID for each gene in each genome
 process format_gene_taxid_table {
     container "${container__ubuntu}"
@@ -153,7 +184,7 @@ gunzip -c "${faa_gz}" | \
     grep '>' | \
     tr -d '>' | \
     while read gene_id; do
-        echo \$gene_id \$gene_id ${tax_id} \$gene_id
+        echo \$(echo \$gene_id | sed 's/.1\$//') \$gene_id ${tax_id} \$gene_id
     done | tr ' ' '\\t' | gzip -c > genome_prot2taxid.tsv.gz
 """
 }
