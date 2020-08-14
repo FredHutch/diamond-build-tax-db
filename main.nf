@@ -9,6 +9,12 @@ params.manifest = false
 params.output_folder = false
 params.output_prefix = false
 
+// Containers to use
+container__ubuntu = "ubuntu:20.04"
+
+// Path to NCBI Taxonomy
+params.ncbi_taxdump = "ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz"
+
 // Function which prints help message text
 def helpMessage() {
     log.info"""
@@ -34,4 +40,27 @@ workflow {
         exit 0
     }
 
+    // Get the NCBI Taxonomy
+    get_NCBI_taxonomy(
+        file(params.ncbi_taxdump)
+    )
+
+}
+
+// Unpack the NCBI taxonomy and return the nodes.dmp
+process get_NCBI_taxonomy {
+    container "${container__ubuntu}"
+    label "io_limited"
+    errorStrategy "retry"
+    
+    input:
+    file ncbi_taxdump
+
+    output:
+    file "nodes.dmp"
+
+"""#!/bin/bash
+
+tar xzvf ${ncbi_taxdump}
+"""
 }

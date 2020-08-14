@@ -36,7 +36,8 @@ nextflow \
     --output_prefix my_database \
     -with-report \
     -with-trace \
-    -resume
+    -resume \
+    -latest
 
 ```
 
