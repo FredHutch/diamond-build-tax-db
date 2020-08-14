@@ -78,7 +78,11 @@ workflow {
 
     // Finally, make the database
     diamondDB(
-        join_genes.out, join_gene_taxid_tables.out, get_NCBI_taxonomy.out
+        join_genes.out.join(
+            join_gene_taxid_tables.out
+        ).join(
+            get_NCBI_taxonomy.out
+        )
     )
 
 }
