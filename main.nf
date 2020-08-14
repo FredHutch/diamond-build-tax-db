@@ -101,12 +101,9 @@ process prodigal {
 set -e
 
 # Decompress the genome, if it is in gzip format
-if [[ gzip -t ${fasta} ]]; then
-    gunzip -c ${fasta} > INPUT.fasta
-else
-    # If not, just rename it
-    cp ${fasta} > INPUT.fasta
-fi
+# If not, just rename it
+gunzip -c ${fasta} > INPUT.fasta || \
+cat ${fasta} > INPUT.fasta
 
 prodigal \
     -a OUTPUT.faa \
