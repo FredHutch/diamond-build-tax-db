@@ -12,7 +12,7 @@ params.output_prefix = false
 // Containers to use
 container__ubuntu = "ubuntu:20.04"
 container__prodigal = "quay.io/biocontainers/prodigal:2.6.3--h516909a_2"
-container__diamond = "quay.io/diamond/2.0.2--h56fc30b_0"
+container__diamond = "quay.io/biocontainers/diamond:2.0.2--h56fc30b_0"
 
 // Path to NCBI Taxonomy
 params.ncbi_taxdump = "ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz"
@@ -75,12 +75,6 @@ workflow {
     join_gene_taxid_tables(
         format_gene_taxid_table.out.toSortedList()
     )
-
-    join_genes.out.combine(
-        join_gene_taxid_tables.out
-    ).combine(
-        get_NCBI_taxonomy.out
-    ).view()
 
     // Finally, make the database
     diamondDB(
