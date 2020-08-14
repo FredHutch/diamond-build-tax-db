@@ -58,9 +58,21 @@ workflow {
         }
     )
 
+    // Combine all of the amino acid sequences
+    join_genes(
+        prodigal.out.map {
+            r -> r[0]
+        }.toSortedList()
+    )
+
     // Annotate the gene names with the organism Tax ID
     format_gene_taxid_table(
         prodigal.out
+    )
+
+    // Join together those gene taxid TSV files
+    join_gene_taxid_tables(
+        format_gene_taxid_table.out.toSortedList()
     )
 
 }
@@ -159,5 +171,28 @@ for fp in genome_prot2taxid.*.tsv.gz; do
 done
 
 gzip genome_prot2taxid.tsv
+"""
+}
+
+// Join together all of the protein sequences
+process join_genes {
+    container "${container__ubuntu}"
+    label "io_limited"
+    // errorStrategy "retry"
+    
+    input:
+    file "genome.*.faa.gz"
+
+    output:
+    file "database.faa.gz"
+
+"""#!/bin/bash
+
+for f in genome.*.faa.gz; do
+    gunzip -c \$f >> database.faa
+done
+
+gzip database.faa
+
 """
 }
