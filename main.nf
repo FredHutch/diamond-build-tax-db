@@ -12,6 +12,7 @@ params.output_prefix = false
 // Containers to use
 container__ubuntu = "ubuntu:20.04"
 container__prodigal = "quay.io/biocontainers/prodigal:2.6.3--h516909a_2"
+container__diamond = "quay.io/diamond/2.0.2--h56fc30b_0"
 
 // Path to NCBI Taxonomy
 params.ncbi_taxdump = "ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz"
@@ -73,6 +74,11 @@ workflow {
     // Join together those gene taxid TSV files
     join_gene_taxid_tables(
         format_gene_taxid_table.out.toSortedList()
+    )
+
+    // Finally, make the database
+    diamondDB(
+        join_genes.out, join_gene_taxid_tables.out, get_NCBI_taxonomy.out
     )
 
 }
@@ -195,4 +201,33 @@ done
 gzip database.faa
 
 """
+}
+
+// Build the DIAMOND database
+process diamondDB {
+    
+    container "${container__diamond}"
+    label 'mem_medium'
+    // errorStrategy 'retry'
+    publishDir "${params.output_folder}", mode: "copy"
+    
+    input:
+    tuple file(fasta), file(taxonmap), file(taxonnodes)
+
+    output:
+    file "genes.dmnd"
+
+    """#!/bin/bash
+
+    set -e
+
+    diamond \
+      makedb \
+      --in ${fasta} \
+      --db ${params.output_prefix}.dmnd \
+      --threads ${task.cpus} \
+      --taxonmap ${taxonmap} \
+      --taxonnodes ${taxonnodes}
+    """
+
 }
