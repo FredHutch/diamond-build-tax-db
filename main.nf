@@ -76,11 +76,17 @@ workflow {
         format_gene_taxid_table.out.toSortedList()
     )
 
+    join_genes.out.combine(
+        join_gene_taxid_tables.out
+    ).combine(
+        get_NCBI_taxonomy.out
+    ).view()
+
     // Finally, make the database
     diamondDB(
-        join_genes.out.join(
+        join_genes.out.combine(
             join_gene_taxid_tables.out
-        ).join(
+        ).combine(
             get_NCBI_taxonomy.out
         )
     )
