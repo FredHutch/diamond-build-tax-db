@@ -150,7 +150,7 @@ process rename_genes {
     tuple file(faa_gz), val(tax_id)
 
     output:
-    tuple file("${faa_gz}"), val(tax_id)
+    tuple file("${faa_gz}.renamed.faa.gz"), val(tax_id)
 
 """#!/usr/bin/env python3
 
