@@ -264,7 +264,7 @@ process diamondDB {
     tuple file("database.faa.gz"), file(taxonmap), file(taxonnodes)
 
     output:
-    file "genes.dmnd"
+    file "${params.output_prefix}.dmnd"
 
     """#!/bin/bash
 
