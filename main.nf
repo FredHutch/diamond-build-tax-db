@@ -196,7 +196,9 @@ gunzip -c "${faa_gz}" | \
     grep '>' | \
     tr -d '>' | \
     while read gene_id; do
-        echo \$(echo \$gene_id | sed 's/.1\$//') \$gene_id ${tax_id} \$gene_id
+        gi=\${RANDOM}\${RANDOM}\${RANDOM}\${RANDOM}
+        gi=${gi:0:9}        
+        echo \$(echo \$gene_id | sed 's/.1\$//') \$gene_id ${tax_id} \$gi
     done | tr ' ' '\\t' | gzip -c > genome_prot2taxid.tsv.gz
 """
 }
